@@ -1,3 +1,4 @@
+import { useState, useMemo } from 'react';
 import 'bulma/css/bulma.css';
 import './App.scss';
 
@@ -15,39 +16,47 @@ export const goodsFromServer = [
 ];
 
 export const App = () => {
-  const [goods, setGoods] = useState(goodsFromServer);
-  const [sortType, setSortType] = useState(null); // 'alpha' | 'length' | 'reverse' | null
+  const [sortType, setSortType] = useState(null); // 'alpha' | 'length' | null
   const [isReversed, setIsReversed] = useState(false);
 
+  // Derived goods based on sort + reverse
+  const goods = useMemo(() => {
+    let result = [...goodsFromServer];
+
+    if (sortType === 'alpha') {
+      result.sort((a, b) => a.localeCompare(b));
+    } else if (sortType === 'length') {
+      result.sort((a, b) => a.length - b.length);
+    }
+
+    if (isReversed) {
+      result.reverse();
+    }
+
+    return result;
+  }, [sortType, isReversed]);
+
   const sortAlphabetically = () => {
-    const sorted = [...goodsFromServer].sort((a, b) => a.localeCompare(b));
-    setGoods(sorted);
     setSortType('alpha');
-    setIsReversed(false);
+    setIsReversed(false); // Start in forward order
   };
 
   const sortByLength = () => {
-    const sorted = [...goodsFromServer].sort((a, b) => a.length - b.length);
-    setGoods(sorted);
     setSortType('length');
     setIsReversed(false);
   };
 
   const reverseOrder = () => {
-    const reversed = [...goods].reverse();
-    setGoods(reversed);
-    setIsReversed(!isReversed);
-    setSortType('reverse'); // This just tells UI a reverse was applied
+    setIsReversed(prev => !prev);
   };
 
   const resetGoods = () => {
-    setGoods(goodsFromServer);
     setSortType(null);
     setIsReversed(false);
   };
 
   const isOriginalOrder =
-    goods.join(',') === goodsFromServer.join(',');
+    sortType === null && isReversed === false;
 
   return (
     <div className="section content">
@@ -70,7 +79,7 @@ export const App = () => {
 
         <button
           type="button"
-          className={`button is-warning ${sortType === 'reverse' ? '' : 'is-light'}`}
+          className={`button is-warning ${isReversed ? '' : 'is-light'}`}
           onClick={reverseOrder}
         >
           Reverse
